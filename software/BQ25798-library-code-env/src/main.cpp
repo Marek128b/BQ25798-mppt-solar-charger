@@ -8,6 +8,7 @@ void setup()
     Serial.begin(115200);
     Serial.println("BQ25798 library test");
     charger.begin();
+    charger.scanI2C();
 }
 
 void loop()

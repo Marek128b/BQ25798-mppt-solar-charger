@@ -21,7 +21,9 @@ private:
 public:
     BQ25798(uint8_t i2cAddress = 0x6B);
 
-    void begin(TwoWire &wirePort = Wire);
+    void begin(TwoWire &wirePort = Wire, uint32_t clockSpeed = 100000);
+
+    void scanI2C(TwoWire &wirePort = Wire);
 
     uint8_t readRegister(uint8_t reg);
     void readAllRegisters();

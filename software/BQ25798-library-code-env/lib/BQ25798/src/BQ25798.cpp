@@ -6,12 +6,45 @@ BQ25798::BQ25798(uint8_t i2cAddress)
     this->_i2cAddress = i2cAddress;
 }
 
-void BQ25798::begin(TwoWire &wirePort)
+/*i2C port, speed in Hz standard value is 100kHz
+- Standard-Mode (Sm), with a bit rate up to 100 kbit/s
+- Fast-Mode (Fm), with a bit rate up to 400 kbit/s
+- Fast-Mode Plus (Fm+), with a bit rate up to 1 Mbit/s
+- High-speed Mode (Hs-mode), with a bit rate up to 3.4 Mbit/s
+*/
+void BQ25798::begin(TwoWire &wirePort, uint32_t clockSpeed)
 {
     _wire = &wirePort;
     _wire->begin();
+    _wire->setClock(clockSpeed);
 }
 
+//code to scan for all devices on the i2C port
+void BQ25798::scanI2C(TwoWire &wirePort)
+{
+    _wire = &wirePort;
+    _wire->begin();
+
+    Serial.println(F("Scanning I2C bus..."));
+
+    for (uint8_t address = 1; address < 127; address++)
+    {
+        _wire->beginTransmission(address);
+        uint8_t error = _wire->endTransmission();
+
+        if (error == 0)
+        {
+            Serial.print(F("Device found at 0x"));
+            if (address < 16)
+                Serial.print("0");
+            Serial.println(address, HEX);
+        }
+    }
+
+    Serial.println(F("Scan complete."));
+}
+
+// reads a single register in the BQ25798
 uint8_t BQ25798::readRegister(uint8_t reg)
 {
     _wire->beginTransmission(_i2cAddress);
@@ -26,6 +59,7 @@ uint8_t BQ25798::readRegister(uint8_t reg)
     return 0xFF; // Error value
 }
 
+// reads all registers of the BQ25798 and prints them to Serial
 void BQ25798::readAllRegisters()
 {
     Serial.println(F("Reading BQ25798 Registers:"));
