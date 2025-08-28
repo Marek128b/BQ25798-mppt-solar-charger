@@ -16,7 +16,8 @@ void setup()
 void loop()
 {
     Serial.println("HEX output:");
-    charger.readAllRegisters(); // default HEX
+    //charger.readAllRegisters(); // default HEX
+    charger.readSingleRegister(0x1C);
 
     /*Serial.println("\nBINARY output:");
     charger.readAllRegisters(true); // binary*/

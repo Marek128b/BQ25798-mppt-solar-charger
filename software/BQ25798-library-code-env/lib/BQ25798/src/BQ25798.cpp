@@ -95,305 +95,309 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
 
     // REG00_Minimal_System_Voltage Register (Offset = 0h) [reset = X]
     case 0x00:
-    {                                   // Minimal System Voltage
+    {
         uint8_t vsysmin = value & 0x3F; // bits 5-0
         int vmin_mV = (float)vsysmin * 250 + 2500;
+
+        Serial.println();
         Serial.print(" -> MinSysV = ");
         Serial.print(vmin_mV, 0);
-        Serial.print(" mV");
+        Serial.println(" mV");
 
-        // Map to cell count for POR defaults
         switch (vmin_mV)
         {
         case 3500:
-            Serial.print(" (1s)");
+            Serial.println(" -> (1s)");
             break;
         case 7000:
-            Serial.print(" (2s)");
+            Serial.println(" -> (2s)");
             break;
         case 9000:
-            Serial.print(" (3s)");
+            Serial.println(" -> (3s)");
             break;
         case 12000:
-            Serial.print(" (4s)");
+            Serial.println(" -> (4s)");
             break;
-        default:
-            break; // other voltages, no POR mapping
         }
         break;
     }
 
     // REG01_Charge_Voltage_Limit Register (Offset = 1h) [reset = X]
     case 0x01:
-    {                                   // Charge Voltage Limit
+    {
         uint16_t vreg = value & 0x07FF; // bits 10-0
         float vchg_mV = (float)vreg * 10;
+
+        Serial.println();
         Serial.print(" -> ChargeV = ");
         Serial.print(vchg_mV, 0);
-        Serial.print(" mV");
+        Serial.println(" mV");
 
-        // Map to cell count for POR defaults
         switch ((int)vchg_mV)
         {
         case 4200:
-            Serial.print(" (1s)");
+            Serial.println(" -> (1s)");
             break;
         case 8400:
-            Serial.print(" (2s)");
+            Serial.println(" -> (2s)");
             break;
         case 12600:
-            Serial.print(" (3s)");
+            Serial.println(" -> (3s)");
             break;
         case 16800:
-            Serial.print(" (4s)");
+            Serial.println(" -> (4s)");
             break;
-        default:
-            break; // other voltages, no mapping
         }
         break;
     }
 
-    // REG03_Charge_Current_Limit Register (Offset = 3h) [reset = X]
+    // REG03_Charge_Current_Limit Register (Offset = 3h)
     case 0x03:
-    {                                   // Charge Current Limit
-        uint16_t ichg = value & 0x01FF; // bits 8-0
+    {
+        uint16_t ichg = value & 0x01FF;
         float ichg_mA = (float)ichg * 10;
+
+        Serial.println();
         Serial.print(" -> ChargeI = ");
         Serial.print(ichg_mA, 0);
-        Serial.print(" mA");
+        Serial.println(" mA");
 
-        // Optional: indicate POR default
         if ((int)ichg_mA == 1000)
-            Serial.print(" (POR default 1A)");
+            Serial.println(" -> POR default 1A");
         break;
     }
 
-    // REG05_Input_Voltage_Limit Register (Offset = 5h) [reset = 24h]
+    // REG05_Input_Voltage_Limit Register
     case 0x05:
-    {                                  // Input Voltage Limit
-        uint8_t vindpm = value & 0xFF; // bits 7-0
+    {
+        uint8_t vindpm = value & 0xFF;
         float vin_mV = (float)vindpm * 100;
+
+        Serial.println();
         Serial.print(" -> InputV = ");
         Serial.print(vin_mV, 0);
-        Serial.print(" mV");
+        Serial.println(" mV");
 
-        // Optional: indicate POR default
         if ((int)vin_mV == 3600)
-            Serial.print(" (POR default)");
+            Serial.println(" -> POR default");
         break;
     }
 
-    // REG06_Input_Current_Limit Register (Offset = 6h) [reset = 12Ch]
+    // REG06_Input_Current_Limit Register
     case 0x06:
-    {                                     // Input Current Limit
-        uint16_t iindpm = value & 0x01FF; // bits 8-0
+    {
+        uint16_t iindpm = value & 0x01FF;
         float iin_mA = (float)iindpm * 10;
+
+        Serial.println();
         Serial.print(" -> InputI = ");
         Serial.print(iin_mA, 0);
-        Serial.print(" mA");
+        Serial.println(" mA");
 
-        // Optional: indicate POR default
         if ((int)iin_mA == 3000)
-            Serial.print(" (POR default)");
+            Serial.println(" -> POR default");
         break;
     }
 
-    // REG08_Precharge_Control Register (Offset = 8h) [reset = C3h]
+    // REG08_Precharge_Control Register
     case 0x08:
-    {                                      // Precharge Control
-        uint8_t vth = (value >> 6) & 0x03; // bits 7-6
-        uint8_t ipre = value & 0x3F;       // bits 5-0
+    {
+        uint8_t vth = (value >> 6) & 0x03;
+        uint8_t ipre = value & 0x3F;
 
+        Serial.println();
         Serial.print(" -> Precharge Vth = ");
         switch (vth)
         {
         case 0:
-            Serial.print("15% of VREG");
+            Serial.println("15% of VREG");
             break;
         case 1:
-            Serial.print("62.2% of VREG");
+            Serial.println("62.2% of VREG");
             break;
         case 2:
-            Serial.print("66.7% of VREG");
+            Serial.println("66.7% of VREG");
             break;
         case 3:
-            Serial.print("71.4% of VREG");
+            Serial.println("71.4% of VREG");
             break;
         }
 
         float ipre_mA = ipre * 40;
-        Serial.print(", Iprecharge = ");
+        Serial.print(" -> Iprecharge = ");
         Serial.print(ipre_mA, 0);
-        Serial.print(" mA");
-
+        Serial.println(" mA");
         break;
     }
 
-    // REG09_Termination_Control Register (Offset = 9h) [reset = 5h]
+    // REG09_Termination_Control Register
     case 0x09:
-    {                                       // Termination Control
-        bool reg_rst = (value >> 6) & 0x01; // bit 6
-        bool stop_wd = (value >> 5) & 0x01; // bit 5
-        uint8_t iterm = value & 0x1F;       // bits 4-0
-
-        Serial.print(" -> REG_RST = ");
-        Serial.print(reg_rst ? "Reset" : "Not reset");
-
-        Serial.print(", STOP_WD_CHG = ");
-        Serial.print(stop_wd ? "EN_CHG=0 on WD expiry" : "Keep EN_CHG");
-
+    {
+        bool reg_rst = (value >> 6) & 0x01;
+        bool stop_wd = (value >> 5) & 0x01;
+        uint8_t iterm = value & 0x1F;
         float iterm_mA = iterm * 40;
-        Serial.print(", Iterm = ");
-        Serial.print(iterm_mA, 0);
-        Serial.print(" mA");
 
+        Serial.println();
+        Serial.print(" -> REG_RST = ");
+        Serial.println(reg_rst ? "Reset" : "Not reset");
+
+        Serial.print(" -> STOP_WD_CHG = ");
+        Serial.println(stop_wd ? "EN_CHG=0 on WD expiry" : "Keep EN_CHG");
+
+        Serial.print(" -> Iterm = ");
+        Serial.print(iterm_mA, 0);
+        Serial.println(" mA");
         break;
     }
 
-    // REG0A_Re-charge_Control Register (Offset = Ah) [reset = X]
+    // REG0A_Re-charge_Control Register
     case 0x0A:
-    {                                         // Re-charge Control
-        uint8_t cell = (value >> 6) & 0x03;   // bits 7-6
-        uint8_t trechg = (value >> 4) & 0x03; // bits 5-4
-        uint8_t vrechg = value & 0x0F;        // bits 3-0
+    {
+        uint8_t cell = (value >> 6) & 0x03;
+        uint8_t trechg = (value >> 4) & 0x03;
+        uint8_t vrechg = value & 0x0F;
+        float vrechg_mV = 50 + vrechg * 50;
 
+        Serial.println();
         Serial.print(" -> CELL = ");
         switch (cell)
         {
         case 0:
-            Serial.print("1s");
+            Serial.println("1s");
             break;
         case 1:
-            Serial.print("2s");
+            Serial.println("2s");
             break;
         case 2:
-            Serial.print("3s");
+            Serial.println("3s");
             break;
         case 3:
-            Serial.print("4s");
+            Serial.println("4s");
             break;
         }
 
-        Serial.print(", Trechg = ");
+        Serial.print(" -> Trechg = ");
         switch (trechg)
         {
         case 0:
-            Serial.print("64 ms");
+            Serial.println("64 ms");
             break;
         case 1:
-            Serial.print("256 ms");
+            Serial.println("256 ms");
             break;
         case 2:
-            Serial.print("1024 ms");
+            Serial.println("1024 ms");
             break;
         case 3:
-            Serial.print("2048 ms");
+            Serial.println("2048 ms");
             break;
         }
 
-        float vrechg_mV = 50 + vrechg * 50;
-        Serial.print(", Vrechg = ");
+        Serial.print(" -> Vrechg = ");
         Serial.print(vrechg_mV, 0);
-        Serial.print(" mV");
-
+        Serial.println(" mV");
         break;
     }
 
-    // REG0B_VOTG_regulation Register (Offset = Bh) [reset = DCh]
+    // REG0B_VOTG_regulation Register
     case 0x0B:
-    {                                   // VOTG Regulation
-        uint16_t votg = value & 0x07FF; // bits 10-0
+    {
+        uint16_t votg = value & 0x07FF;
         float votg_mV = votg * 10 + 2800;
+
+        Serial.println();
         Serial.print(" -> VOTG = ");
         Serial.print(votg_mV, 0);
-        Serial.print(" mV");
+        Serial.println(" mV");
 
-        // Optional: indicate POR default
         if ((int)votg_mV == 5000)
-            Serial.print(" (POR default)");
+            Serial.println(" -> POR default");
         break;
     }
 
-    // REG0D_IOTG_regulation Register (Offset = Dh) [reset = 4Bh]
+    // REG0D_IOTG_regulation Register
     case 0x0D:
-    {                                          // IOTG Regulation
-        bool prechg_tmr = (value >> 7) & 0x01; // bit 7
-        uint8_t iotg = value & 0x7F;           // bits 6-0
-
-        Serial.print(" -> PRECHG_TMR = ");
-        Serial.print(prechg_tmr ? "0.5 hrs" : "2 hrs");
-
+    {
+        bool prechg_tmr = (value >> 7) & 0x01;
+        uint8_t iotg = value & 0x7F;
         float iotg_mA = iotg * 40;
-        Serial.print(", IOTG = ");
-        Serial.print(iotg_mA, 0);
-        Serial.print(" mA");
 
-        // Optional: indicate POR default
+        Serial.println();
+        Serial.print(" -> PRECHG_TMR = ");
+        Serial.println(prechg_tmr ? "0.5 hrs" : "2 hrs");
+
+        Serial.print(" -> IOTG = ");
+        Serial.print(iotg_mA, 0);
+        Serial.println(" mA");
+
         if ((int)iotg_mA == 3040)
-            Serial.print(" (POR default)");
+            Serial.println(" -> POR default");
         break;
     }
 
-        // REG0E_Timer_Control Register (Offset = Eh) [reset = 3Dh]
+    // REG0E_Timer_Control Register
     case 0x0E:
-    {                                            // Timer Control
-        uint8_t topoff = (value >> 6) & 0x03;    // bits 7-6
-        bool en_trichg = (value >> 5) & 0x01;    // bit 5
-        bool en_prechg = (value >> 4) & 0x01;    // bit 4
-        bool en_chg = (value >> 3) & 0x01;       // bit 3
-        uint8_t chg_timer = (value >> 1) & 0x03; // bits 2-1
-        bool tmr2x = value & 0x01;               // bit 0
+    {
+        uint8_t topoff = (value >> 6) & 0x03;
+        bool en_trichg = (value >> 5) & 0x01;
+        bool en_prechg = (value >> 4) & 0x01;
+        bool en_chg = (value >> 3) & 0x01;
+        uint8_t chg_timer = (value >> 1) & 0x03;
+        bool tmr2x = value & 0x01;
 
+        Serial.println();
         Serial.print(" -> TOPOFF_TMR = ");
         switch (topoff)
         {
         case 0:
-            Serial.print("Disabled");
+            Serial.println("Disabled");
             break;
         case 1:
-            Serial.print("15 min");
+            Serial.println("15 min");
             break;
         case 2:
-            Serial.print("30 min");
+            Serial.println("30 min");
             break;
         case 3:
-            Serial.print("45 min");
+            Serial.println("45 min");
             break;
         }
 
-        Serial.print(", EN_TRICHG_TMR = ");
-        Serial.print(en_trichg ? "ENABLED" : "DISABLED");
-        Serial.print(", EN_PRECHG_TMR = ");
-        Serial.print(en_prechg ? "ENABLED" : "DISABLED");
-        Serial.print(", EN_CHG_TMR = ");
-        Serial.print(en_chg ? "ENABLED" : "DISABLED");
+        Serial.print(" -> EN_TRICHG_TMR = ");
+        Serial.println(en_trichg ? "ENABLED" : "DISABLED");
 
-        Serial.print(", CHG_TMR = ");
+        Serial.print(" -> EN_PRECHG_TMR = ");
+        Serial.println(en_prechg ? "ENABLED" : "DISABLED");
+
+        Serial.print(" -> EN_CHG_TMR = ");
+        Serial.println(en_chg ? "ENABLED" : "DISABLED");
+
+        Serial.print(" -> CHG_TMR = ");
         switch (chg_timer)
         {
         case 0:
-            Serial.print("5 h");
+            Serial.println("5 h");
             break;
         case 1:
-            Serial.print("8 h");
+            Serial.println("8 h");
             break;
         case 2:
-            Serial.print("12 h");
+            Serial.println("12 h");
             break;
         case 3:
-            Serial.print("24 h");
+            Serial.println("24 h");
             break;
         }
 
-        Serial.print(", TMR2X_EN = ");
-        Serial.print(tmr2x ? "SLOWED 2x" : "NORMAL");
-
+        Serial.print(" -> TMR2X_EN = ");
+        Serial.println(tmr2x ? "SLOWED 2x" : "NORMAL");
         break;
     }
 
-    // REG0F_Charger_Control_0 Register (Offset = Fh) [reset = A2h]
+        // REG0F_Charger_Control_0 Register
     case 0x0F:
-    { // Charger Control 0
+    {
         bool en_auto_dis = (value >> 7) & 0x01;
         bool force_dis = (value >> 6) & 0x01;
         bool en_chg = (value >> 5) & 0x01;
@@ -401,108 +405,108 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         bool force_ico = (value >> 3) & 0x01;
         bool en_hiz = (value >> 2) & 0x01;
         bool en_term = (value >> 1) & 0x01;
-        bool en_backup = value & 0x01; // bit 0
+        bool en_backup = value & 0x01;
 
+        Serial.println();
         Serial.print(" -> EN_AUTO_IBATDIS = ");
-        Serial.print(en_auto_dis ? "ON" : "OFF");
-        Serial.print(", FORCE_IBATDIS = ");
-        Serial.print(force_dis ? "ON" : "OFF");
-        Serial.print(", EN_CHG = ");
-        Serial.print(en_chg ? "ENABLED" : "DISABLED");
-        Serial.print(", EN_ICO = ");
-        Serial.print(en_ico ? "ENABLED" : "DISABLED");
-        Serial.print(", FORCE_ICO = ");
-        Serial.print(force_ico ? "FORCE" : "NO");
-        Serial.print(", EN_HIZ = ");
-        Serial.print(en_hiz ? "ENABLED" : "DISABLED");
-        Serial.print(", EN_TERM = ");
-        Serial.print(en_term ? "ENABLED" : "DISABLED");
-        Serial.print(", EN_BACKUP = ");
-        Serial.print(en_backup ? "ENABLED" : "DISABLED");
-
+        Serial.println(en_auto_dis ? "ON" : "OFF");
+        Serial.print(" -> FORCE_IBATDIS = ");
+        Serial.println(force_dis ? "ON" : "OFF");
+        Serial.print(" -> EN_CHG = ");
+        Serial.println(en_chg ? "ENABLED" : "DISABLED");
+        Serial.print(" -> EN_ICO = ");
+        Serial.println(en_ico ? "ENABLED" : "DISABLED");
+        Serial.print(" -> FORCE_ICO = ");
+        Serial.println(force_ico ? "FORCE" : "NO");
+        Serial.print(" -> EN_HIZ = ");
+        Serial.println(en_hiz ? "ENABLED" : "DISABLED");
+        Serial.print(" -> EN_TERM = ");
+        Serial.println(en_term ? "ENABLED" : "DISABLED");
+        Serial.print(" -> EN_BACKUP = ");
+        Serial.println(en_backup ? "ENABLED" : "DISABLED");
         break;
     }
 
-    // REG10_Charger_Control_1 Register (Offset = 10h) [reset = 85h]
+    // REG10_Charger_Control_1 Register
     case 0x10:
-    {                                              // Charger Control 1
-        uint8_t vbus_backup = (value >> 6) & 0x03; // bits 7-6
-        uint8_t vac_ovp = (value >> 4) & 0x03;     // bits 5-4
-        bool wd_rst = (value >> 3) & 0x01;         // bit 3
-        uint8_t watchdog = value & 0x07;           // bits 2-0
+    {
+        uint8_t vbus_backup = (value >> 6) & 0x03;
+        uint8_t vac_ovp = (value >> 4) & 0x03;
+        bool wd_rst = (value >> 3) & 0x01;
+        uint8_t watchdog = value & 0x07;
 
+        Serial.println();
         Serial.print(" -> VBUS_BACKUP = ");
         switch (vbus_backup)
         {
         case 0:
-            Serial.print("40% VINDPM");
+            Serial.println("40% VINDPM");
             break;
         case 1:
-            Serial.print("60% VINDPM");
+            Serial.println("60% VINDPM");
             break;
         case 2:
-            Serial.print("80% VINDPM");
+            Serial.println("80% VINDPM");
             break;
         case 3:
-            Serial.print("100% VINDPM");
+            Serial.println("100% VINDPM");
             break;
         }
 
-        Serial.print(", VAC_OVP = ");
+        Serial.print(" -> VAC_OVP = ");
         switch (vac_ovp)
         {
         case 0:
-            Serial.print("26 V");
+            Serial.println("26 V");
             break;
         case 1:
-            Serial.print("22 V");
+            Serial.println("22 V");
             break;
         case 2:
-            Serial.print("12 V");
+            Serial.println("12 V");
             break;
         case 3:
-            Serial.print("7 V");
+            Serial.println("7 V");
             break;
         }
 
-        Serial.print(", WD_RST = ");
-        Serial.print(wd_rst ? "RESET" : "NORMAL");
+        Serial.print(" -> WD_RST = ");
+        Serial.println(wd_rst ? "RESET" : "NORMAL");
 
-        Serial.print(", WATCHDOG = ");
+        Serial.print(" -> WATCHDOG = ");
         switch (watchdog)
         {
         case 0:
-            Serial.print("Disabled");
+            Serial.println("Disabled");
             break;
         case 1:
-            Serial.print("0.5 s");
+            Serial.println("0.5 s");
             break;
         case 2:
-            Serial.print("1 s");
+            Serial.println("1 s");
             break;
         case 3:
-            Serial.print("2 s");
+            Serial.println("2 s");
             break;
         case 4:
-            Serial.print("20 s");
+            Serial.println("20 s");
             break;
         case 5:
-            Serial.print("40 s");
+            Serial.println("40 s");
             break;
         case 6:
-            Serial.print("80 s");
+            Serial.println("80 s");
             break;
         case 7:
-            Serial.print("160 s");
+            Serial.println("160 s");
             break;
         }
-
         break;
     }
 
-    // REG11_Charger_Control_2 Register (Offset = 11h) [reset = 40h]
+    // REG11_Charger_Control_2 Register
     case 0x11:
-    { // Charger Control 2
+    {
         bool force_indet = (value >> 7) & 0x01;
         bool auto_indet = (value >> 6) & 0x01;
         bool en_12v = (value >> 5) & 0x01;
@@ -511,43 +515,43 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         uint8_t sdrv_ctrl = (value >> 1) & 0x03;
         bool sdrv_dly = value & 0x01;
 
+        Serial.println();
         Serial.print(" -> FORCE_INDET = ");
-        Serial.print(force_indet ? "FORCE" : "NO");
-        Serial.print(", AUTO_INDET_EN = ");
-        Serial.print(auto_indet ? "ENABLED" : "DISABLED");
-        Serial.print(", EN_12V = ");
-        Serial.print(en_12v ? "ENABLED" : "DISABLED");
-        Serial.print(", EN_9V = ");
-        Serial.print(en_9v ? "ENABLED" : "DISABLED");
-        Serial.print(", HVDCP_EN = ");
-        Serial.print(hvdcp_en ? "ENABLED" : "DISABLED");
+        Serial.println(force_indet ? "FORCE" : "NO");
+        Serial.print(" -> AUTO_INDET_EN = ");
+        Serial.println(auto_indet ? "ENABLED" : "DISABLED");
+        Serial.print(" -> EN_12V = ");
+        Serial.println(en_12v ? "ENABLED" : "DISABLED");
+        Serial.print(" -> EN_9V = ");
+        Serial.println(en_9v ? "ENABLED" : "DISABLED");
+        Serial.print(" -> HVDCP_EN = ");
+        Serial.println(hvdcp_en ? "ENABLED" : "DISABLED");
 
-        Serial.print(", SDRV_CTRL = ");
+        Serial.print(" -> SDRV_CTRL = ");
         switch (sdrv_ctrl)
         {
         case 0:
-            Serial.print("IDLE");
+            Serial.println("IDLE");
             break;
         case 1:
-            Serial.print("Shutdown");
+            Serial.println("Shutdown");
             break;
         case 2:
-            Serial.print("Ship");
+            Serial.println("Ship");
             break;
         case 3:
-            Serial.print("System Power Reset");
+            Serial.println("System Power Reset");
             break;
         }
 
-        Serial.print(", SDRV_DLY = ");
-        Serial.print(sdrv_dly ? "NO delay" : "10s delay");
-
+        Serial.print(" -> SDRV_DLY = ");
+        Serial.println(sdrv_dly ? "NO delay" : "10s delay");
         break;
     }
 
-    // REG12_Charger_Control_3 Register (Offset = 12h) [reset = 0h]
+    // REG12_Charger_Control_3 Register
     case 0x12:
-    { // Charger Control 3
+    {
         bool dis_acdrv = (value >> 7) & 0x01;
         bool en_otg = (value >> 6) & 0x01;
         bool pfm_otg_dis = (value >> 5) & 0x01;
@@ -557,29 +561,29 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         bool dis_otg_ooa = (value >> 1) & 0x01;
         bool dis_fwd_ooa = value & 0x01;
 
+        Serial.println();
         Serial.print(" -> DIS_ACDRV = ");
-        Serial.print(dis_acdrv ? "FORCE OFF" : "Normal");
-        Serial.print(", EN_OTG = ");
-        Serial.print(en_otg ? "ENABLED" : "DISABLED");
-        Serial.print(", PFM_OTG_DIS = ");
-        Serial.print(pfm_otg_dis ? "DISABLED" : "ENABLED");
-        Serial.print(", PFM_FWD_DIS = ");
-        Serial.print(pfm_fwd_dis ? "DISABLED" : "ENABLED");
-        Serial.print(", WKUP_DLY = ");
-        Serial.print(wkup_dly ? "15 ms" : "1 s");
-        Serial.print(", DIS_LDO = ");
-        Serial.print(dis_ldo ? "DISABLED" : "ENABLED");
-        Serial.print(", DIS_OTG_OOA = ");
-        Serial.print(dis_otg_ooa ? "DISABLED" : "ENABLED");
-        Serial.print(", DIS_FWD_OOA = ");
-        Serial.print(dis_fwd_ooa ? "DISABLED" : "ENABLED");
-
+        Serial.println(dis_acdrv ? "FORCE OFF" : "Normal");
+        Serial.print(" -> EN_OTG = ");
+        Serial.println(en_otg ? "ENABLED" : "DISABLED");
+        Serial.print(" -> PFM_OTG_DIS = ");
+        Serial.println(pfm_otg_dis ? "DISABLED" : "ENABLED");
+        Serial.print(" -> PFM_FWD_DIS = ");
+        Serial.println(pfm_fwd_dis ? "DISABLED" : "ENABLED");
+        Serial.print(" -> WKUP_DLY = ");
+        Serial.println(wkup_dly ? "15 ms" : "1 s");
+        Serial.print(" -> DIS_LDO = ");
+        Serial.println(dis_ldo ? "DISABLED" : "ENABLED");
+        Serial.print(" -> DIS_OTG_OOA = ");
+        Serial.println(dis_otg_ooa ? "DISABLED" : "ENABLED");
+        Serial.print(" -> DIS_FWD_OOA = ");
+        Serial.println(dis_fwd_ooa ? "DISABLED" : "ENABLED");
         break;
     }
 
-    // REG13_Charger_Control_4 Register (Offset = 13h) [reset = X]
+    // REG13_Charger_Control_4 Register
     case 0x13:
-    { // Charger Control 4
+    {
         bool en_acdrv2 = (value >> 7) & 0x01;
         bool en_acdrv1 = (value >> 6) & 0x01;
         bool pwm_freq = (value >> 5) & 0x01;
@@ -589,29 +593,29 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         bool force_vindpm = (value >> 1) & 0x01;
         bool en_ibus_ocp = value & 0x01;
 
+        Serial.println();
         Serial.print(" -> EN_ACDRV2 = ");
-        Serial.print(en_acdrv2 ? "ON" : "OFF");
-        Serial.print(", EN_ACDRV1 = ");
-        Serial.print(en_acdrv1 ? "ON" : "OFF");
-        Serial.print(", PWM_FREQ = ");
-        Serial.print(pwm_freq ? "750 kHz" : "1.5 MHz");
-        Serial.print(", DIS_STAT = ");
-        Serial.print(dis_stat ? "DISABLED" : "ENABLED");
-        Serial.print(", DIS_VSYS_SHORT = ");
-        Serial.print(dis_vsys_short ? "DISABLED" : "ENABLED");
-        Serial.print(", DIS_VOTG_UVP = ");
-        Serial.print(dis_votg_uvp ? "DISABLED" : "ENABLED");
-        Serial.print(", FORCE_VINDPM_DET = ");
-        Serial.print(force_vindpm ? "FORCED" : "NORMAL");
-        Serial.print(", EN_IBUS_OCP = ");
-        Serial.print(en_ibus_ocp ? "ENABLED" : "DISABLED");
-
+        Serial.println(en_acdrv2 ? "ON" : "OFF");
+        Serial.print(" -> EN_ACDRV1 = ");
+        Serial.println(en_acdrv1 ? "ON" : "OFF");
+        Serial.print(" -> PWM_FREQ = ");
+        Serial.println(pwm_freq ? "750 kHz" : "1.5 MHz");
+        Serial.print(" -> DIS_STAT = ");
+        Serial.println(dis_stat ? "DISABLED" : "ENABLED");
+        Serial.print(" -> DIS_VSYS_SHORT = ");
+        Serial.println(dis_vsys_short ? "DISABLED" : "ENABLED");
+        Serial.print(" -> DIS_VOTG_UVP = ");
+        Serial.println(dis_votg_uvp ? "DISABLED" : "ENABLED");
+        Serial.print(" -> FORCE_VINDPM_DET = ");
+        Serial.println(force_vindpm ? "FORCED" : "NORMAL");
+        Serial.print(" -> EN_IBUS_OCP = ");
+        Serial.println(en_ibus_ocp ? "ENABLED" : "DISABLED");
         break;
     }
 
-    // REG14_Charger_Control_5 Register (Offset = 14h) [reset = 16h]
+    // REG14_Charger_Control_5 Register
     case 0x14:
-    { // Charger Control 5
+    {
         bool sfet_present = (value >> 7) & 0x01;
         bool en_ibat = (value >> 5) & 0x01;
         uint8_t ibat_reg = (value >> 3) & 0x03;
@@ -619,115 +623,118 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         bool en_extilim = (value >> 1) & 0x01;
         bool en_batoc = value & 0x01;
 
+        Serial.println();
         Serial.print(" -> SFET_PRESENT = ");
-        Serial.print(sfet_present ? "YES" : "NO");
-        Serial.print(", EN_IBAT = ");
-        Serial.print(en_ibat ? "ENABLED" : "DISABLED");
-        Serial.print(", IBAT_REG = ");
+        Serial.println(sfet_present ? "YES" : "NO");
+        Serial.print(" -> EN_IBAT = ");
+        Serial.println(en_ibat ? "ENABLED" : "DISABLED");
+
+        Serial.print(" -> IBAT_REG = ");
         switch (ibat_reg)
         {
         case 0:
-            Serial.print("3A");
+            Serial.println("3A");
             break;
         case 1:
-            Serial.print("4A");
+            Serial.println("4A");
             break;
         case 2:
-            Serial.print("5A");
+            Serial.println("5A");
             break;
         case 3:
-            Serial.print("DISABLED");
+            Serial.println("DISABLED");
             break;
         }
-        Serial.print(", EN_IINDPM = ");
-        Serial.print(en_iindpm ? "ENABLED" : "DISABLED");
-        Serial.print(", EN_EXTILIM = ");
-        Serial.print(en_extilim ? "ENABLED" : "DISABLED");
-        Serial.print(", EN_BATOC = ");
-        Serial.print(en_batoc ? "ENABLED" : "DISABLED");
 
+        Serial.print(" -> EN_IINDPM = ");
+        Serial.println(en_iindpm ? "ENABLED" : "DISABLED");
+        Serial.print(" -> EN_EXTILIM = ");
+        Serial.println(en_extilim ? "ENABLED" : "DISABLED");
+        Serial.print(" -> EN_BATOC = ");
+        Serial.println(en_batoc ? "ENABLED" : "DISABLED");
         break;
     }
 
-    // REG15_MPPT_Control Register (Offset = 15h) [reset = AAh]
+    // REG15_MPPT_Control Register
     case 0x15:
-    { // MPPT Control
+    {
         uint8_t voc_pct = (value >> 5) & 0x07;
         uint8_t voc_dly = (value >> 3) & 0x03;
         uint8_t voc_rate = (value >> 1) & 0x03;
         bool en_mppt = value & 0x01;
 
+        Serial.println();
         Serial.print(" -> VOC_PCT = ");
         switch (voc_pct)
         {
         case 0:
-            Serial.print("0.5625");
+            Serial.println("0.5625");
             break;
         case 1:
-            Serial.print("0.625");
+            Serial.println("0.625");
             break;
         case 2:
-            Serial.print("0.6875");
+            Serial.println("0.6875");
             break;
         case 3:
-            Serial.print("0.75");
+            Serial.println("0.75");
             break;
         case 4:
-            Serial.print("0.8125");
+            Serial.println("0.8125");
             break;
         case 5:
-            Serial.print("0.875");
+            Serial.println("0.875");
             break;
         case 6:
-            Serial.print("0.9375");
+            Serial.println("0.9375");
             break;
         case 7:
-            Serial.print("1");
+            Serial.println("1");
             break;
         }
 
-        Serial.print(", VOC_DLY = ");
+        Serial.print(" -> VOC_DLY = ");
         switch (voc_dly)
         {
         case 0:
-            Serial.print("50ms");
+            Serial.println("50ms");
             break;
         case 1:
-            Serial.print("300ms");
+            Serial.println("300ms");
             break;
         case 2:
-            Serial.print("2s");
+            Serial.println("2s");
             break;
         case 3:
-            Serial.print("5s");
+            Serial.println("5s");
             break;
         }
 
-        Serial.print(", VOC_RATE = ");
+        Serial.print(" -> VOC_RATE = ");
         switch (voc_rate)
         {
         case 0:
-            Serial.print("30s");
+            Serial.println("30s");
             break;
         case 1:
-            Serial.print("2mins");
+            Serial.println("2mins");
             break;
         case 2:
-            Serial.print("10mins");
+            Serial.println("10mins");
             break;
         case 3:
-            Serial.print("30mins");
+            Serial.println("30mins");
             break;
         }
 
-        Serial.print(", EN_MPPT = ");
-        Serial.print(en_mppt ? "ENABLED" : "DISABLED");
+        Serial.print(" -> EN_MPPT = ");
+        Serial.println(en_mppt ? "ENABLED" : "DISABLED");
         break;
     }
 
-    // REG16_Temperature_Control Register (Offset = 16h) [reset = C0h]
+    // REG16_Temperature_Control Register
     case 0x16:
-    { // Temperature Control
+    {
         uint8_t treg = (value >> 6) & 0x03;
         uint8_t tshut = (value >> 4) & 0x03;
         bool vbus_pd = (value >> 3) & 0x01;
@@ -735,208 +742,210 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         bool vac2_pd = (value >> 1) & 0x01;
         bool bkup_acfet1 = value & 0x01;
 
+        Serial.println();
         Serial.print(" -> TREG = ");
         switch (treg)
         {
         case 0:
-            Serial.print("60C");
+            Serial.println("60C");
             break;
         case 1:
-            Serial.print("80C");
+            Serial.println("80C");
             break;
         case 2:
-            Serial.print("100C");
+            Serial.println("100C");
             break;
         case 3:
-            Serial.print("120C");
+            Serial.println("120C");
             break;
         }
 
-        Serial.print(", TSHUT = ");
+        Serial.print(" -> TSHUT = ");
         switch (tshut)
         {
         case 0:
-            Serial.print("150C");
+            Serial.println("150C");
             break;
         case 1:
-            Serial.print("130C");
+            Serial.println("130C");
             break;
         case 2:
-            Serial.print("120C");
+            Serial.println("120C");
             break;
         case 3:
-            Serial.print("85C");
+            Serial.println("85C");
             break;
         }
 
-        Serial.print(", VBUS_PD_EN = ");
-        Serial.print(vbus_pd ? "Enable" : "Disable");
-        Serial.print(", VAC1_PD_EN = ");
-        Serial.print(vac1_pd ? "Enable" : "Disable");
-        Serial.print(", VAC2_PD_EN = ");
-        Serial.print(vac2_pd ? "Enable" : "Disable");
-        Serial.print(", BKUP_ACFET1_ON = ");
-        Serial.print(bkup_acfet1 ? "Enable" : "IDLE");
-
+        Serial.print(" -> VBUS_PD_EN = ");
+        Serial.println(vbus_pd ? "Enable" : "Disable");
+        Serial.print(" -> VAC1_PD_EN = ");
+        Serial.println(vac1_pd ? "Enable" : "Disable");
+        Serial.print(" -> VAC2_PD_EN = ");
+        Serial.println(vac2_pd ? "Enable" : "Disable");
+        Serial.print(" -> BKUP_ACFET1_ON = ");
+        Serial.println(bkup_acfet1 ? "Enable" : "IDLE");
         break;
     }
 
-    // REG17_NTC_Control_0 Register (Offset = 17h) [reset = 7Ah]
+    // REG17_NTC_Control_0 Register
     case 0x17:
-    { // NTC Control 0
+    {
         uint8_t jeita_vset = (value >> 5) & 0x07;
         uint8_t jeita_iseth = (value >> 3) & 0x03;
         uint8_t jeita_isetc = (value >> 1) & 0x03;
 
+        Serial.println();
         Serial.print(" -> JEITA_VSET = ");
         switch (jeita_vset)
         {
         case 0:
-            Serial.print("Charge Suspend");
+            Serial.println("Charge Suspend");
             break;
         case 1:
-            Serial.print("VREG-800mV");
+            Serial.println("VREG-800mV");
             break;
         case 2:
-            Serial.print("VREG-600mV");
+            Serial.println("VREG-600mV");
             break;
         case 3:
-            Serial.print("VREG-400mV");
+            Serial.println("VREG-400mV");
             break;
         case 4:
-            Serial.print("VREG-300mV");
+            Serial.println("VREG-300mV");
             break;
         case 5:
-            Serial.print("VREG-200mV");
+            Serial.println("VREG-200mV");
             break;
         case 6:
-            Serial.print("VREG-100mV");
+            Serial.println("VREG-100mV");
             break;
         case 7:
-            Serial.print("VREG unchanged");
+            Serial.println("VREG unchanged");
             break;
         }
 
-        Serial.print(", JEITA_ISETH = ");
+        Serial.print(" -> JEITA_ISETH = ");
         switch (jeita_iseth)
         {
         case 0:
-            Serial.print("Charge Suspend");
+            Serial.println("Charge Suspend");
             break;
         case 1:
-            Serial.print("20% ICHG");
+            Serial.println("20% ICHG");
             break;
         case 2:
-            Serial.print("40% ICHG");
+            Serial.println("40% ICHG");
             break;
         case 3:
-            Serial.print("unchanged");
+            Serial.println("unchanged");
             break;
         }
 
-        Serial.print(", JEITA_ISETC = ");
+        Serial.print(" -> JEITA_ISETC = ");
         switch (jeita_isetc)
         {
         case 0:
-            Serial.print("Charge Suspend");
+            Serial.println("Charge Suspend");
             break;
         case 1:
-            Serial.print("20% ICHG");
+            Serial.println("20% ICHG");
             break;
         case 2:
-            Serial.print("40% ICHG");
+            Serial.println("40% ICHG");
             break;
         case 3:
-            Serial.print("unchanged");
+            Serial.println("unchanged");
             break;
         }
-
         break;
     }
 
-    // REG18_NTC_Control_1 Register (Offset = 18h) [reset = 54h]
+    // REG18_NTC_Control_1 Register
     case 0x18:
-    { // NTC Control 1
+    {
         uint8_t ts_cool = (value >> 6) & 0x03;
         uint8_t ts_warm = (value >> 4) & 0x03;
         uint8_t bhot = (value >> 2) & 0x03;
         bool bcold = (value >> 1) & 0x01;
         bool ts_ignore = value & 0x01;
 
+        Serial.println();
         Serial.print(" -> TS_COOL = ");
         switch (ts_cool)
         {
         case 0:
-            Serial.print("5C");
+            Serial.println("5C");
             break;
         case 1:
-            Serial.print("10C");
+            Serial.println("10C");
             break;
         case 2:
-            Serial.print("15C");
+            Serial.println("15C");
             break;
         case 3:
-            Serial.print("20C");
+            Serial.println("20C");
             break;
         }
 
-        Serial.print(", TS_WARM = ");
+        Serial.print(" -> TS_WARM = ");
         switch (ts_warm)
         {
         case 0:
-            Serial.print("40C");
+            Serial.println("40C");
             break;
         case 1:
-            Serial.print("45C");
+            Serial.println("45C");
             break;
         case 2:
-            Serial.print("50C");
+            Serial.println("50C");
             break;
         case 3:
-            Serial.print("55C");
+            Serial.println("55C");
             break;
         }
 
-        Serial.print(", BHOT = ");
+        Serial.print(" -> BHOT = ");
         switch (bhot)
         {
         case 0:
-            Serial.print("55C");
+            Serial.println("55C");
             break;
         case 1:
-            Serial.print("60C");
+            Serial.println("60C");
             break;
         case 2:
-            Serial.print("65C");
+            Serial.println("65C");
             break;
         case 3:
-            Serial.print("Disabled");
+            Serial.println("Disabled");
             break;
         }
 
-        Serial.print(", BCOLD = ");
-        Serial.print(bcold ? "-20C" : "-10C");
-
-        Serial.print(", TS_IGNORE = ");
-        Serial.print(ts_ignore ? "Ignore" : "Normal");
-
+        Serial.print(" -> BCOLD = ");
+        Serial.println(bcold ? "-20C" : "-10C");
+        Serial.print(" -> TS_IGNORE = ");
+        Serial.println(ts_ignore ? "Ignore" : "Normal");
         break;
     }
 
-    // REG19_ICO_Current_Limit Register (Offset = 19h) [reset = 0h]
+    // REG19_ICO_Current_Limit Register
     case 0x19:
-    {                                        // ICO Current Limit
-        uint16_t ico_ilim = value & 0x1FF;   // bits 8-0
-        uint32_t current_mA = ico_ilim * 10; // step size 10mA
+    {
+        uint16_t ico_ilim = value & 0x1FF;
+        uint32_t current_mA = ico_ilim * 10;
+
+        Serial.println();
         Serial.print(" -> ICO Current Limit = ");
         Serial.print(current_mA);
-        Serial.print(" mA");
+        Serial.println(" mA");
         break;
     }
 
-    // REG1B_Charger_Status_0 Register (Offset = 1Bh) [reset = 0h]
+    // REG1B_Charger_Status_0 Register
     case 0x1B:
     {
+        Serial.println();
         Serial.print(" -> IINDPM_STAT = ");
         Serial.print((value >> 7) & 0x01);
         Serial.print(", VINDPM_STAT = ");
@@ -954,12 +963,12 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         break;
     }
 
-    // REG1C_Charger_Status_1 Register (Offset = 1Ch) [reset = 0h]
+    // REG1C_Charger_Status_1 Register
     case 0x1C:
     {
-        uint8_t chg_stat = (value >> 5) & 0x07;  // bits 7-5
-        uint8_t vbus_stat = (value >> 1) & 0x0F; // bits 4-1
-        bool bc12_done = value & 0x01;           // bit 0
+        uint8_t chg_stat = (value >> 5) & 0x07;
+        uint8_t vbus_stat = (value >> 1) & 0x0F;
+        bool bc12_done = value & 0x01;
 
         Serial.println();
         Serial.print(" -> CHG_STAT = ");
@@ -1021,12 +1030,6 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         case 0x8:
             Serial.println("0x8: Not qualified adapter");
             break;
-        case 0x9:
-            Serial.println("0x9: Reserved");
-            break;
-        case 0xA:
-            Serial.println("0xA: Reserved");
-            break;
         case 0xB:
             Serial.println("0xB: Device directly powered from VBUS");
             break;
@@ -1042,8 +1045,7 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         Serial.println(bc12_done ? "1: Complete" : "0: Not complete");
         break;
     }
-
-    // REG1D_Charger_Status_2 Register (Offset = 1Dh) [reset = 0h]
+    // REG1D_Charger_Status_2 Register
     case 0x1D:
     {
         uint8_t ico_stat = (value >> 6) & 0x03;
@@ -1051,6 +1053,7 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         bool dpdm_stat = (value >> 1) & 0x01;
         bool vbat_present = value & 0x01;
 
+        Serial.println();
         Serial.print(" -> ICO_STAT = ");
         Serial.print(ico_stat);
         Serial.print(", TREG_STAT = ");
@@ -1062,7 +1065,7 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         break;
     }
 
-    // REG1E_Charger_Status_3 Register (Offset = 1Eh) [reset = 0h]
+    // REG1E_Charger_Status_3 Register
     case 0x1E:
     {
         bool acrb2 = (value >> 7) & 0x01;
@@ -1073,6 +1076,7 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         bool trichg_timer = (value >> 2) & 0x01;
         bool prechg_timer = (value >> 1) & 0x01;
 
+        Serial.println();
         Serial.print(" -> ACRB2_STAT = ");
         Serial.print(acrb2);
         Serial.print(", ACRB1_STAT = ");
@@ -1090,7 +1094,7 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         break;
     }
 
-    // REG1F_Charger_Status_4 Register (Offset = 1Fh) [reset = 0h]
+    // REG1F_Charger_Status_4 Register
     case 0x1F:
     {
         bool vbat_otg_low = (value >> 4) & 0x01;
@@ -1099,6 +1103,7 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         bool ts_warm = (value >> 1) & 0x01;
         bool ts_hot = value & 0x01;
 
+        Serial.println();
         Serial.print(" -> VBATOTG_LOW = ");
         Serial.print(vbat_otg_low);
         Serial.print(", TS_COLD = ");
@@ -1112,11 +1117,13 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         break;
     }
 
-    // REG48_Part_Information Register (Offset = 48h) [reset = 0h]
+    // REG48_Part_Information Register
     case 0x48:
-    {                                     // Part Information
+    {
         uint8_t pn = (value >> 3) & 0x07; // bits 5-3
         uint8_t rev = value & 0x07;       // bits 2-0
+
+        Serial.println();
         Serial.print(" -> Part = ");
         switch (pn)
         {
@@ -1127,6 +1134,7 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
             Serial.print("Unknown");
             break;
         }
+
         Serial.print(", Rev = ");
         Serial.print(rev);
         break;
@@ -1135,6 +1143,83 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
     default:
         break; // no decoding available
     }
+}
+
+// reads a single register and prints its value with decoding
+void BQ25798::readSingleRegister(uint8_t reg, bool outputBinary)
+{
+    // Find register info
+    const char *name = nullptr;
+    bool wide = false;
+    for (uint8_t i = 0; i < registerCount; i++)
+    {
+        if (registers[i].address == reg)
+        {
+            name = registers[i].name;
+            wide = registers[i].is16bit;
+            break;
+        }
+    }
+
+    if (!name)
+    {
+        Serial.print(F("Unknown register 0x"));
+        if (reg < 0x10)
+            Serial.print('0');
+        Serial.println(reg, HEX);
+        return;
+    }
+
+    // read value
+    uint16_t value = wide ? readRegister16(reg) : readRegister8(reg);
+
+    // print address and name
+    Serial.print(F("0x"));
+    if (reg < 0x10)
+        Serial.print('0');
+    Serial.print(reg, HEX);
+    Serial.print(" : ");
+    Serial.print(name);
+    Serial.print(" : ");
+
+    // print value in binary or hex
+    if (outputBinary)
+    {
+        Serial.print(F("0b"));
+        if (wide)
+        {
+            for (int b = 15; b >= 0; b--)
+                Serial.print((value >> b) & 0x01);
+        }
+        else
+        {
+            for (int b = 7; b >= 0; b--)
+                Serial.print((value >> b) & 0x01);
+        }
+    }
+    else
+    {
+        Serial.print(F("0x"));
+        if (wide)
+        {
+            if (value < 0x1000)
+                Serial.print('0');
+            if (value < 0x0100)
+                Serial.print('0');
+            if (value < 0x0010)
+                Serial.print('0');
+            Serial.print(value, HEX);
+        }
+        else
+        {
+            if (value < 0x10)
+                Serial.print('0');
+            Serial.print(value & 0xFF, HEX);
+        }
+    }
+
+    // decode and print human-readable info
+    decodeRegister(reg, value);
 }
 
 // reads all registers of the BQ25798 and prints them to Serial

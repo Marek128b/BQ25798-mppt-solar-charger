@@ -31,6 +31,7 @@ public:
     void scanI2C(TwoWire &wirePort = Wire);
 
     uint8_t readRegister(uint8_t reg);
+    void readSingleRegister(uint8_t reg, bool outputBinary = false);
     void readAllRegisters(bool outputBinary = false);
 };
 
