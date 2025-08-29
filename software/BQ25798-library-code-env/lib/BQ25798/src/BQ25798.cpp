@@ -1117,6 +1117,87 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
         break;
     }
 
+    // REG2E_ADC_Control Register
+    case 0x2E:
+    {
+        uint8_t adc_en = (value >> 7) & 0x01;
+        uint8_t adc_rate = (value >> 6) & 0x01;
+        uint8_t adc_sample = (value >> 4) & 0x03;
+        uint8_t adc_avg = (value >> 3) & 0x01;
+        uint8_t adc_avg_init = (value >> 2) & 0x01;
+        uint8_t reserved = value & 0x03;
+
+        Serial.println();
+
+        // ADC_EN
+        Serial.print(" -> ADC_EN = ");
+        Serial.println(adc_en ? "Enable" : "Disable");
+
+        // ADC_RATE
+        Serial.print(" -> ADC_RATE = ");
+        switch (adc_rate)
+        {
+        case 0:
+            Serial.println("Continuous conversion");
+            break;
+        case 1:
+            Serial.println("One-shot conversion");
+            break;
+        }
+
+        // ADC_SAMPLE
+        Serial.print(" -> ADC_SAMPLE = ");
+        switch (adc_sample)
+        {
+        case 0:
+            Serial.println("15-bit effective resolution");
+            break;
+        case 1:
+            Serial.println("14-bit effective resolution");
+            break;
+        case 2:
+            Serial.println("13-bit effective resolution");
+            break;
+        case 3:
+            Serial.println("12-bit effective resolution (not recommended)");
+            break;
+        }
+
+        // ADC_AVG
+        Serial.print(" -> ADC_AVG = ");
+        Serial.println(adc_avg ? "Running average (except IBAT discharge)" : "Single value");
+
+        // ADC_AVG_INIT
+        Serial.print(" -> ADC_AVG_INIT = ");
+        Serial.println(adc_avg_init ? "Start average with new ADC conversion" : "Start average with existing value");
+
+        // RESERVED
+        Serial.print(" -> RESERVED = 0x");
+        Serial.print(reserved, HEX);
+
+        break;
+    }
+
+    // REG33_IBAT_ADC Register
+    case 0x33:
+    {
+        int16_t ibat = (int16_t)value; // 16-bit signed, 2's complement
+        Serial.println();
+        Serial.print(" -> IBAT_ADC = ");
+        Serial.print(ibat);
+        Serial.println(" mA");
+
+        if (ibat >= 0)
+        {
+            Serial.print(" -> Battery Charging");
+        }
+        else
+        {
+            Serial.print(" -> Battery Discharging");
+        }
+        break;
+    }
+
     // REG48_Part_Information Register
     case 0x48:
     {
@@ -1146,7 +1227,7 @@ void BQ25798::decodeRegister(uint8_t reg, uint16_t value)
 }
 
 // reads a single register and prints its value with decoding
-void BQ25798::readSingleRegister(uint8_t reg, bool outputBinary)
+uint16_t BQ25798::readSingleRegister(uint8_t reg, bool outputBinary)
 {
     // Find register info
     const char *name = nullptr;
@@ -1167,7 +1248,6 @@ void BQ25798::readSingleRegister(uint8_t reg, bool outputBinary)
         if (reg < 0x10)
             Serial.print('0');
         Serial.println(reg, HEX);
-        return;
     }
 
     // read value
@@ -1220,10 +1300,11 @@ void BQ25798::readSingleRegister(uint8_t reg, bool outputBinary)
 
     // decode and print human-readable info
     decodeRegister(reg, value);
+    return value;
 }
 
 // reads all registers of the BQ25798 and prints them to Serial
-void BQ25798::readAllRegisters(bool outputBinary)
+void BQ25798::printAllRegisters(bool outputBinary)
 {
     Serial.println(F("Reading BQ25798 Registers:"));
 
@@ -1259,6 +1340,8 @@ void BQ25798::readAllRegisters(bool outputBinary)
                 for (int b = 7; b >= 0; b--)
                     Serial.print((value >> b) & 0x01);
             }
+            Serial.print(" => ");
+            Serial.print(value);
         }
         else
         {
@@ -1287,6 +1370,67 @@ void BQ25798::readAllRegisters(bool outputBinary)
         Serial.println();
         Serial.println();
     }
+}
+
+// writes a single 8-bit register in the BQ25798
+void BQ25798::writeRegister(uint8_t reg, uint8_t value)
+{
+    _wire->beginTransmission(_i2cAddress);
+    _wire->write(reg);
+    _wire->write(value);
+    _wire->endTransmission();
+}
+
+// writes a 16-bit register in the BQ25798 (LSB first, MSB second)
+void BQ25798::writeRegister16(uint8_t reg, uint16_t value)
+{
+    _wire->beginTransmission(_i2cAddress);
+    _wire->write(reg);
+    _wire->write(value & 0xFF);        // LSB
+    _wire->write((value >> 8) & 0xFF); // MSB
+    _wire->endTransmission();
+}
+
+void BQ25798::setSingleRegister(uint8_t reg, uint16_t bits)
+{
+    // find register entry
+    for (uint8_t i = 0; i < registerCount; i++)
+    {
+        if (registers[i].address == reg)
+        {
+            bool wide = registers[i].is16bit;
+
+            if (wide)
+            {
+                // 16-bit write
+                writeRegister16(reg, bits);
+            }
+            else
+            {
+                // 8-bit write
+                writeRegister(reg, bits & 0xFF);
+            }
+
+            Serial.print(F("Wrote 0x"));
+            Serial.print(wide ? bits : (bits & 0xFF), HEX);
+            Serial.print(F(" to register 0x"));
+            if (reg < 0x10)
+                Serial.print('0');
+            Serial.print(reg, HEX);
+            Serial.print(F(" ("));
+            Serial.print(registers[i].name);
+            Serial.println(F(")"));
+
+            return;
+        }
+    }
+
+    // if we reach here -> unknown register
+    Serial.print(F("Error: Register 0x"));
+    if (reg < 0x10)
+        Serial.print('0');
+    Serial.print(reg, HEX);
+    Serial.println(F(" not found!"));
 }
 
 const BQ25798::RegisterEntry BQ25798::registers[] = {

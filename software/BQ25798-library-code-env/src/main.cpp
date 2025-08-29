@@ -15,12 +15,15 @@ void setup()
 
 void loop()
 {
-    Serial.println("HEX output:");
-    //charger.readAllRegisters(); // default HEX
+    // Serial.println("HEX output:");
+    // charger.printAllRegisters(); // default HEX
     charger.readSingleRegister(0x1C);
+    (int16_t)charger.readSingleRegister(0x33);
+    
+    //charger.setSingleRegister(0x2E, 0b10110000); //enable adc in register 0x2E => default: 0b00110000
 
     /*Serial.println("\nBINARY output:");
-    charger.readAllRegisters(true); // binary*/
+    charger.printAllRegisters(true); // binary*/
     Serial.println("=========================================================================================");
     delay(10000);
 }
