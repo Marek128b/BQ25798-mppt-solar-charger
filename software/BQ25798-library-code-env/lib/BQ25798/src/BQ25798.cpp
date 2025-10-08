@@ -6,7 +6,9 @@ BQ25798::BQ25798(uint8_t i2cAddress)
     this->_i2cAddress = i2cAddress;
 }
 
-/*i2C port, speed in Hz standard value is 100kHz
+/*
+Sets the library internal values for the I2C port and clock speed
+i2C port, speed in Hz standard value is 100kHz, arduino max. 400kHz
 - Standard-Mode (Sm), with a bit rate up to 100 kbit/s
 - Fast-Mode (Fm), with a bit rate up to 400 kbit/s
 - Fast-Mode Plus (Fm+), with a bit rate up to 1 Mbit/s
@@ -19,7 +21,10 @@ void BQ25798::begin(TwoWire &wirePort, uint32_t clockSpeed)
     _wire->setClock(clockSpeed);
 }
 
-//code to scan for all devices on the i2C port
+/*
+Scans all I2C addresses on the port, no begin needed.
+Prints all found devices out on Serial (Serial begin needed in code).
+*/
 void BQ25798::scanI2C(TwoWire &wirePort)
 {
     _wire = &wirePort;
@@ -44,7 +49,7 @@ void BQ25798::scanI2C(TwoWire &wirePort)
     Serial.println(F("Scan complete."));
 }
 
-// reads a single register in the BQ25798
+// reads a single register in the BQ25798 and returns its value as a Uint with 8 Bit
 uint8_t BQ25798::readRegister(uint8_t reg)
 {
     _wire->beginTransmission(_i2cAddress);
@@ -82,6 +87,9 @@ void BQ25798::readAllRegisters()
     }
 }
 
+/*
+Library internal struct for all registers and their functions
+*/
 const BQ25798::RegisterEntry BQ25798::registers[58] = {
     {0x00, "REG00_Minimal_System_Voltage"},
     {0x01, "REG01_Charge_Voltage_Limit"},
