@@ -37,7 +37,7 @@ void BQ25798::scanI2C(TwoWire &wirePort)
         _wire->beginTransmission(address);
         uint8_t error = _wire->endTransmission();
 
-        if (error == 0)
+        if (!error) // check for device addresses
         {
             Serial.print(F("Device found at 0x"));
             if (address < 16)
@@ -1375,6 +1375,23 @@ void BQ25798::printAllRegisters(bool outputBinary)
         Serial.println();
         Serial.println();
     }
+}
+
+/*
+Watchdog timer settings
+0h = Disable
+1h = 0.5s
+2h = 1s
+3h = 2s
+4h = 20s
+5h = 40s (default)
+6h = 80s
+7h = 160s
+*/
+void BQ25798::setWatchdogTimer(byte val) // REG10_Charger_Control_1 Register bit 2-0 LSB
+{
+    val && 0b00000111; //reduce to 3 bit
+    writeRegister(0x10, val);
 }
 
 // writes a single 8-bit register in the BQ25798

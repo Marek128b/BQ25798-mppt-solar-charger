@@ -19,6 +19,8 @@ void loop()
     // charger.printAllRegisters(); // default HEX
     charger.readSingleRegister(0x1C);
     (int16_t)charger.readSingleRegister(0x33);
+
+    charger.setWatchdogTimer(0); //disables Watchdog timer
     
     //charger.setSingleRegister(0x2E, 0b10110000); //enable adc in register 0x2E => default: 0b00110000
 

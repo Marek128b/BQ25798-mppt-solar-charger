@@ -37,6 +37,8 @@ public:
     uint16_t readSingleRegister(uint8_t reg, bool outputBinary = false);
     void printAllRegisters(bool outputBinary = false);
 
+    void setWatchdogTimer(byte val);
+
     void setSingleRegister(uint8_t reg, uint16_t bits);
 };
 
