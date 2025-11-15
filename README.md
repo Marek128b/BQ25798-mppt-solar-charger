@@ -14,14 +14,5 @@ Key features:
 
 This board is suitable for developers building energy-efficient, battery-powered systems that rely on variable power sources like small PV panels.
 
-<!--
-    Source - https://stackoverflow.com/a
-    Posted by Waylan, modified by community. See post 'Timeline' for change history
-    Retrieved 2025-11-15, License - CC BY-SA 4.0
--->
 
-<object data="BQ25798_docs.pdf" type="application/pdf" width="700px" height="700px">
-    <embed src="BQ25798_docs.pdf">
-        <p>This browser does not support PDFs. Please download the PDF to view it: <a href="BQ25798_docs.pdf">Download PDF</a>.</p>
-    </embed>
-</object>
+<iframe width="100%" height="800" src="BQ25798_docs.pdf">
