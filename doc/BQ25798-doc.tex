@@ -1,6 +1,5 @@
 \documentclass[12pt]{article}
 \usepackage[a4paper, margin=1in]{geometry}
-\usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{listings}
 \usepackage{xcolor}
@@ -8,9 +7,13 @@
 \usepackage[colorlinks=true, linkcolor=blue, urlcolor=blue, citecolor=blue]{hyperref}
 \usepackage{fancyhdr}
 \usepackage{titling}
+\usepackage{tabularx}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \usepackage{lastpage}
 \usepackage{siunitx}
 \usepackage{hyperref}
+\usepackage[inkscapelatex=false]{svg}
+\usepackage{graphicx}
 \usepackage{tocloft}
 \renewcommand{\cftsecleader}{\cftdotfill{\cftdotsep}}
 \usepackage{float}  % Needed for [H] placement
@@ -39,8 +42,8 @@
 
 \title{BQ25798 I2C Controlled, 1- to 4-Cell, 5-A Buck-Boost Battery Charger with MPPT for Solar Panels}
 \author{\textit{by Startobytes}}
-\date{June 2025}
-\newcommand{\versionnumber}{Version 1.0}
+\date{November 2025}
+\newcommand{\versionnumber}{Version 2.0}
 
 
 \begin{document}
@@ -61,7 +64,7 @@
     {\large \versionnumber \par}
     
     \vfill
-    \includegraphics[width=0.9\linewidth]{BQ25798 test board mppt V1.0 3d render noBG.png}
+    \includegraphics[width=0.9\linewidth]{BQ25798 test board mppt V2.0 3d render noBG.png}
 
 \end{titlepage}
 
@@ -129,69 +132,49 @@ recommended.
         750 kHz & 4s & 27.0 k$\Omega$ \\
         \hline
     \end{tabular}
-    \caption{PROG Pin Resistance to Set Default Switching Frequency and Battery Cell Count}
+    \caption{PROG Pin Resistance to Set Default Switching Frequency and Battery Cell Count (as seen in the BQ25798 datasheet~\cite[p.~46]{TI_BQ25798})}
     \label{tab:frequency_resistance}
 \end{table}
 
-\subsubsection{VBUS Input Only}
-In this conimguration, only a single input is connected to VBUS, so that no power MOSFETs are required. VAC1
-and VAC2 are shorted to VBUS, and ACDRV1 and ACDRV2 are pulled down to GND, as shown in \autoref{img:single-Input-vbus-directly}.
-At POR, the charger detects that no ACFETs or RBFETs are present by sensing that the ACDRV1 and ACDRV2
-pins are both shorted to GND and configures power mux register fields as shown in \autoref{tab:single_input_conimg_summary}.
+\subsubsection{Dulal Vbus Inputs}
+
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=.8\linewidth]{Single Input Connected to VBUS Directly Without ACFET-RBFET.png}
-    \caption{Single Input Connected to VBUS Directly Without ACFET-RBFET}
-    \label{img:single-Input-vbus-directly}
+    \includegraphics[width=.8\linewidth]{Dual Input Connected to VBUS With ACFET-RBFET.png}
+    \caption{Dual Input Connected to VBUS With ACFET-RBFET (as seen in the BQ25798 datasheet~\cite[p.~46]{TI_BQ25798})}
+    \label{img:dual-Input-vbus}
 \end{figure}
 
 \begin{table}[H]
     \centering
-    \rowcolors{2}{rowgray}{white} % alternating row colors
-    \begin{tabular}{|c|c|}
+    \rowcolors{2}{rowgray}{white}
+    \begin{tabular}{|p{7cm}|p{8cm}|}
         \hline
         \rowcolor{headerbg}
         \textcolor{headerfg}{\textbf{PIN OR REGISTER FIELD}} &
         \textcolor{headerfg}{\textbf{STATE}} \\
         \hline
-        External MOSFETs & No external power mux MOSFETs. \\
-        VAC1 pin & Shorted to VBUS \\
-        VAC2 pin & Shorted to VBUS \\
-        ACDRV1 pin & Shorted to GND \\
-        ACDRV2 pin & Shorted to GND \\
-        ACRB1\_STAT & 0 (Read Only) \\
-        ACRB2\_STAT & 0 (Read Only) \\
-        DIS\_ACDRV & 1 \\
-        EN\_ACDRV1 & Locked at 0 \\
-        EN\_ACDRV2 & Locked at 0 \\
+        External MOSFETs & ACFET1, RBFET1, ACFET2, RBFET2 \\
+        VAC1 pin & Connected to input source 1 \\
+        VAC2 pin & Connected to input source 2 \\
+        ACDRV1 pin & Connected to ACFET1/RBFET1 gate terminals \\
+        ACDRV2 pin & Connected to ACFET2/RBFET2 gate terminals \\
+        ACRB1\_STAT & 0: ACFET1/RBFET1 Open (Path Disabled)\\
+                     & 1: ACFET1/RBFET1 Closed (Path Enabled) \\
+        ACRB2\_STAT & 0: ACFET2/RBFET2 Open (Path Disabled)\\
+                     & 1: ACFET2/RBFET2 Closed (Path Enabled) \\
+        DIS\_ACDRV & 0: Allow ACDRV1 or ACDRV2 on if all requirements met\\
+                   & 1: Force ACDRV1 and ACDRV2 off\\
+        EN\_ACDRV1 & 0: Force ACDRV1 Off\\
+                   & 1: Turn ACDRV1 On if all requirements met \\
+        EN\_ACDRV2 & 0: Force ACDRV2 Off\\
+                   & 1: Turn ACDRV2 On if all requirements met \\
         \hline
     \end{tabular}
-    \caption{Single Input Conimguration Summary}
-    \label{tab:single_input_conimg_summary}
+    \caption{Dual Input Configuration Summary (as seen in the BQ25798 datasheet~\cite[p.~46]{TI_BQ25798})}
+    \label{tab:dual_input_config_summary}
 \end{table}
-
-% ##### TS Resistor Network Design ########################################################################################
-\subsection{TS Resistor Network Design}
-The BQ25798 charger IC uses a TS (thermistor sense) pin to monitor battery temperature via a resistor network. This network typically includes an NTC thermistor and two external resistors: RT1 and RT2.
-\subsubsection*{JEITA Compliance}
-To comply with JEITA safety standards for Li-ion batteries:
-\begin{itemize}
-    \item Charging is suspended if TS voltage is outside the T1–T5 range.
-    \item In the T1–T2 (cool) zone, charging current is reduced to 20\%, 40\%, or 100\% of normal (T2–T3), or suspended.
-    \item In the T3–T5 (warm) zone, charge voltage is reduced by an offset (0 to 800\,mV), and current can be limited.
-\end{itemize}
-
-\subsubsection*{Charge Termination}
-Termination current is not adjusted by temperature. If reduced current is below the set termination value and battery voltage is within range, charging stops.
-
-\subsubsection*{Thermistor Resistor Network}
-The TS pin uses a resistor divider:
-\begin{itemize}
-    \item \textbf{RT1} (REGN to TS): \SI{5.24}{k\ohm}
-    \item \textbf{RT2} (TS to GND): \SI{30.31}{k\ohm}
-\end{itemize}
-This is based on a 103AT NTC thermistor and temperature thresholds T1 = 0°C, T5 = 60°C.
 
 \subsubsection*{OTG Temperature Limits}
 During OTG mode, the temperature must stay between:
@@ -252,7 +235,7 @@ The device offers a 1.5MHz switching frequency for compact designs using 1µH in
         1.5MHz & 1µH \\
         \hline
     \end{tabular}
-    \caption{Inductor Selection Table}
+    \caption{Inductor Selection Table (as seen in the BQ25798 datasheet~\cite[p.~46]{TI_BQ25798})}
     \label{tab:Inductor-Selection}
 \end{table}
 
@@ -323,29 +306,6 @@ Three \textbf{10~\(\mu\)F}, \textbf{25~V} ceramic capacitors were used at the in
     \label{img:ceramic-capacitor-used}
 \end{figure}
 
-% ##### charging current ##################################################################################################
-\subsection{used charging current}
-As shown in \autoref{sec:ILIM-HIZ}, this board is designed for an approximate input current limit of 500\,mA. 
-
-With the actual component values used—\( R_2 = 10\,\text{k}\Omega \) and \( R_1 = 26.1\,\text{k}\Omega \)—the calculated current limit is approximately 475\,mA, according to the resistor divider equation:
-
-\begin{equation}
-\frac{R_1}{R_2} = \frac{5}{1 + 0.8 \cdot I_{\text{INDPM}}} - 1
-\end{equation}
-
-Solving for \( I_{\text{INDPM}} \) with the given resistor values:
-
-\begin{equation}
-I_{\text{INDPM}} = \frac{\left( \frac{R_2}{R_1 + R_2} \cdot 5 \right) - 1}{0.8} \approx 0.475\,\text{A} = 475\,\text{mA}
-\end{equation}
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=.4\linewidth]{Iset-BQ25798-voltage-devider.PNG}
-    \caption{Indpm Voltage Devider}
-    \label{img:Iset-BQ25798-voltage-devider}
-\end{figure}
-
 % ##### Pin configurations ################################################################################################
 \section{Pin configurations}
 % ##### SDRV configuration ################################################################################################
@@ -386,39 +346,53 @@ To set the desired input current limit \( I_{\text{INDPM}} \) using a resistor d
 First, compute the ILIM\_HIZ voltage based on the target current:
 
 \begin{equation}
-V_{\text{ILIM\_HIZ}} = 1\,\text{V} + 0.8\,\Omega \cdot I_{\text{INDPM}}
-\label{equ:ILIM_HIZ_voltage_2}
+    V_{\text{ILIM\_HIZ}} = 1\,\text{V} + 0.8\,\Omega \cdot I_{\text{INDPM}}
+    \label{equ:ILIM_HIZ_voltage_2}
 \end{equation}
 
 This voltage is set by the resistor divider:
 
 \begin{equation}
-V_{\text{ILIM\_HIZ}} = 5\,\text{V} \cdot \frac{R_2}{R_1 + R_2}
-\label{equ:divider_voltage}
+    V_{\text{ILIM\_HIZ}} = 5\,\text{V} \cdot \frac{R_2}{R_1 + R_2}
+    \label{equ:divider_voltage}
 \end{equation}
 
 Solving for the resistor ratio as a function of the target current:
 
 \begin{equation}
-\frac{R_1}{R_2} = \frac{5}{1 + 0.8 \cdot I_{\text{INDPM}}} - 1
-\label{equ:resistor_ratio}
+    \frac{R_1}{R_2} = \frac{5}{1 + 0.8 \cdot I_{\text{INDPM}}} - 1
+    \label{equ:resistor_ratio}
 \end{equation}
 
-\subsubsection{Example 500mA}
-For a target input current limit of \( I_{\text{INDPM}} = 0.5\,\text{A} \) (500 mA),
+% ##### charging current ##################################################################################################
+For a target input current limit of \( I_{\text{INDPM}} = 1.0\,\text{A} \) (1000 mA),
+With the actual component values used—\( R_2 = 10\,\text{k}\Omega \) and \( R_1 = 18\,\text{k}\Omega \)—the calculated current limit is approximately 975\,mA, according to the resistor divider equation:
 
 \begin{equation}
-\frac{R_1}{R_2} = \frac{5}{1 + 0.8 \times 0.5} - 1 = \frac{5}{1 + 0.4} - 1 = \frac{5}{1.4} - 1 \approx 2.57
-\label{equ:resistor_ratio_example}
+    \frac{R_1}{R_2} = \frac{5}{1 + 0.8 \times 1.0A}- 1 
+    = \frac{5}{1 + 0.8} - 1 = \frac{5}{1.8} - 1 \approx 1.77
+    \label{equ:resistor_ratio_example}
 \end{equation}
 
 Choosing \( R_2 = 10\,\text{k}\Omega \), then
 
 \begin{equation}
-R_1 = 2.57 \times 10\,\text{k}\Omega = 25.7\,\text{k}\Omega
-\label{equ:R1_value_example}
+    R_1 = 1.77 \times 10\,\text{k}\Omega = 17.7\,\text{k}\Omega \approx \mathbf{18k\Omega}
+    \label{equ:R1_value_example}
 \end{equation}
 
+Solving for \( I_{\text{INDPM}} \) with the given resistor values:
+
+\begin{equation}
+I_{\text{INDPM}} = \frac{\left( \frac{R_2}{R_1 + R_2} \cdot 5 \right) - 1}{0.8} \approx 0.975\,\text{A} = 975\,\text{mA}
+\end{equation}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=.4\linewidth]{975mA charge.PNG}
+    \caption{Indpm Voltage Devider}
+    \label{img:Iset-BQ25798-voltage-devider}
+\end{figure}
 
 % ##### REGN Internal LDO #################################################################################################
 \subsection{REGN (Internal Linear Regulator Output)}
@@ -447,36 +421,248 @@ A ceramic capacitor rated 4.7uF, 10V must be connected between \textbf{REGN} and
         \SI{30}{\milli\ampere} typical \\
         \hline
     \end{tabular}
-    \caption{REGN LDO Output Characteristics}
+    \caption{REGN LDO Output Characteristics (as seen in the BQ25798 datasheet~\cite[p.~46]{TI_BQ25798})}
     \label{tab:REGN-LDO-Output}
 \end{table}
 
 % ##### TS Resistor Network ###############################################################################################
-\subsection{TS Resistor Network}
+\subsection{TS Resistor Network Design}
+The BQ25798 charger IC uses a TS (thermistor sense) pin to monitor battery temperature via a resistor network. This network typically includes an NTC thermistor and two external resistors: RT1 and RT2.
+\subsubsection*{JEITA Compliance}
+To comply with JEITA safety standards for Li-ion batteries:
+\begin{itemize}
+    \item Charging is suspended if TS voltage is outside the T1–T5 range.
+    \item In the T1–T2 (cool) zone, charging current is reduced to 20\%, 40\%, or 100\% of normal (T2–T3), or suspended.
+    \item In the T3–T5 (warm) zone, charge voltage is reduced by an offset (0 to 800\,mV), and current can be limited.
+\end{itemize}
+
+\subsubsection*{Charge Termination}
+Termination current is not adjusted by temperature. If reduced current is below the set termination value and battery voltage is within range, charging stops.
+
+\subsubsection{TS Resistor Network}
 \begin{figure}[H]
     \centering
     \includegraphics[width=.5\linewidth]{bq25798 TS Resistor Network.PNG}
-    \caption{TS Resistor Network}
+    \caption{TS Resistor Network (BQ25798 datasheet~\cite[p.~46]{TI_BQ25798})}
     \label{img:bq25798-TS Resistor Network}
 \end{figure}
 
-Assuming a 103AT NTC thermistor on the battery pack, the value of TSR1 and TSR2 can be determined by:
-\newpage
+\normalsize
+%calculation for NTC RTH, RT1, RT2
 
-\begingroup
+Found RTH values for NTC as in the LUT of 
+\href{https://www.lcsc.com/datasheet/C51597.pdf}{Datasheet of NTC}.\\
+(C51597 NTC datasheet~\cite[p.~46]{LCSC_C51597}) \\[6pt]
+\[
+    R_{\mathrm{TH,COLD}} = \mathbf{32.116k}\,\Omega \; @ \; 0^\circ\mathrm{C}
+\]
+\[
+    R_{\mathrm{TH,HOT}} = \mathbf{2.457k}\,\Omega \; @ \; 60^\circ\mathrm{C}
+\]
+This is based on a 103AT NTC thermistor and temperature thresholds T1 = 0°C, T5 = 60°C. (as seen in the BQ25798 datasheet~\cite[p.~46]{TI_BQ25798})
+
+\( V_{\text{REGN}} = 5\text{V} \)(based on~\cite[p.~16]{TI_BQ25798}). 
+Then:
+
+\[
+\begin{aligned}
+    VT1 &= 73.3\% \cdot V_{\mathrm{REGN}} = \textbf{3.665}~\text{V} \\
+    VT5 &= 34.2\% \cdot V_{\mathrm{REGN}} = \textbf{1.71}~\text{V}
+\end{aligned}
+\]
+(based on~\cite[p.~14-15]{TI_BQ25798}).\newline
+
+The following formulas were derived using the loaded voltage divider formula and a system of equations as shown below.
+
+% ---------------------------------------------------------
+% 1. Equation for R2 || R_NTC and Vout
+% ---------------------------------------------------------
+\subsubsection{Equation for R2 parallel NTC and Vout}
+
+\begin{equation}
+    R_{2\parallel \mathrm{NTC}}
+    = \frac{R_2 \, R_{\mathrm{NTC}}}{R_2 + R_{\mathrm{NTC}}}
+    \label{equ:R2_parallel_RNTC}
+\end{equation}
+
+\begin{equation}
+    V_{\mathrm{out}}
+    = V_{CC} \,
+      \frac{R_{2\parallel \mathrm{NTC}}}
+           {R_1 + R_{2\parallel \mathrm{NTC}}}
+    \label{equ:Vout}
+\end{equation}
+
+% ---------------------------------------------------------
+% 2. Hot and Cold R2 equations
+% ---------------------------------------------------------
+\subsubsection{Hot and Cold R2 Equations}
+
+\begin{equation}
+    R_{2,\mathrm{hot}}
+    = \frac{R_2 \, R_{\mathrm{hot}}}{R_2 + R_{\mathrm{hot}}}
+    \label{equ:R2_hot}
+\end{equation}
+
+\begin{equation}
+    R_{2,\mathrm{cold}}
+    = \frac{R_2 \, R_{\mathrm{cold}}}{R_2 + R_{\mathrm{cold}}}
+    \label{equ:R2_cold}
+\end{equation}
+
+% ---------------------------------------------------------
+% 3. Solve for R1 using V_hot = V_cold
+% ---------------------------------------------------------
+\subsubsection{Solving for R1 from Hot and Cold Voltages (E24)}
+
+Condition:
+
+\begin{equation}
+    R_{1,\mathrm{hot}} = R_{1,\mathrm{cold}}
+    \label{equ:R1hot_equals_R1cold}
+\end{equation}
+
+Chosen standard value:
+
+\begin{equation}
+    R_{T2} \approx \mathbf{4.3\,\mathrm{k}\Omega}
+    \label{equ:Rt2_4.3k}
+\end{equation}
+
+% ---------------------------------------------------------
+% 4. Hot and Cold R1 equations
+% ---------------------------------------------------------
+\subsubsection{Hot and Cold R1 Equations}
+
+\begin{equation}
+    R_{1,\mathrm{hot}}
+    = \frac{R_1 \, R_{\mathrm{hot}}}{R_1 + R_{\mathrm{hot}}}
+    \label{equ:R1_hot}
+\end{equation}
+
+\begin{equation}
+    R_{1,\mathrm{cold}}
+    = \frac{R_1 \, R_{\mathrm{cold}}}{R_1 + R_{\mathrm{cold}}}
+    \label{equ:R1_cold}
+\end{equation}
+
+% ---------------------------------------------------------
+% 5. Alternative R1 calculation
+% ---------------------------------------------------------
+\subsubsection{Solving for R1}
+
+Condition:
+
+\begin{equation}
+    R_{2,\mathrm{hot}} = R_{2,\mathrm{cold}}
+    \label{equ:R2hot_equals_R2cold}
+\end{equation}
+
+Chosen standard value:
+
+\begin{equation}
+    R_{T1} \approx \mathbf{18\,\mathrm{k}\Omega}
+    \label{equ:R1_18k}
+\end{equation}
+
+% ---------------------------------------------------------
+% 6. Output voltage limits
+% ---------------------------------------------------------
+\subsubsection{Minimum and Maximum Output Voltages}
+
+\begin{equation}
+    V_{\mathrm{out,hot}}
+    =
+    V_{CC}
+    \frac{R_{2,\mathrm{hot}}}{R_1 + R_{2,\mathrm{hot}}}
+    \label{equ:Vout_hot}
+\end{equation}
+
+\begin{equation}
+    V_{\mathrm{out,cold}}
+    =
+    V_{CC}
+    \frac{R_{2,\mathrm{cold}}}{R_1 + R_{2,\mathrm{cold}}}
+    \label{equ:Vout_cold}
+\end{equation}
+
+% ---------------------------------------------------------
+% 6. Dirived formulas for RT1 and RT2
+% ---------------------------------------------------------
+\subsubsection{Dirived formulas for RT1 and RT2}
 \large
+% New formulas for R_T1 and R_T2
 \begin{equation}
-RT2 = \frac{RTH_{COLD} \times RTH_{HOT} \times \left( \frac{1}{VT1} - \frac{1}{VT5} \right)}{RTH_{HOT} \times \left( \frac{1}{VT5} - 1 \right) - RTH_{COLD} \times \left( \frac{1}{VT1} - 1 \right)}
-\label{equ:RT2_value}
+        R_{T1} = \frac{\,ntchot\; ntcold\; (v_1 - v_2)\; v_{cc}\,}
+                 {(ntchot - ntcold)\; v_1\, v_2}
+    \label{equ:new_RT1}
 \end{equation}
-\newline
 
 \begin{equation}
-RT1 = \frac{\frac{1}{VT1} - 1}{\frac{1}{RT2} + \frac{1}{RTH_{COLD}}}
-\label{equ:RT1_value}
+        R_{T2} = \frac{\,ntchot\; (v_1 - v_{cc})\; v_2 - ntcold\; v_1\; (v_2 - v_{cc})\,}
+                {(ntchot - ntcold)\; v_1\, v_2}
+    \label{equ:new_RT2}
 \end{equation}
-\endgroup
+\normalsize
+
+Using \autoref{equ:new_RT1} and \autoref{equ:new_RT2}, the values of $R_{T1}$ and $R_{T2}$ are calculated as follows:
+
+\noindent These resistances provide the proper threshold voltages for the TS pin of the BQ25798 according to the datasheet~\cite[p.~14-15]{TI_BQ25798}.\\
+
+Using these values, we can calculate the minimum and maximum Voltages at the Input of the BQ25798.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Min Max Voltage for RT1 RT2.PNG}
+    \caption{Minimum and Maximum Voltages for RT1 RT2}
+    \label{fig:MinMaxVoltageRT1RT2}
+\end{figure}
+
+The graph shown in \autoref{fig:MinMaxVoltageRT1RT2} displays the acceptable range for the TS pin on the BQ25798 chip to charge the battery where Vin is the REGN Voltage v2calc is the upper Voltage limit and v1calc is the lower voltage limit. All voltages shown in \autoref{fig:MinMaxVoltageRT1RT2} were calculated using "RT1,RT2 calculation Vout.ggb".
 
 
+% ##### PCB Components placement ##########################################################################################
+\newpage
+\section{PCB Component placement}
+This section shows the placement of all components on the PCB.  
+\autoref{img:pcb-bq25798-test-board-mppt-solar} illustrates the layout of the BQ25798 test board with MPPT for solar applications.
 
+\begin{figure}[H]
+    \centering
+    \includesvg[width=\linewidth]{PCB_PCB_BQ25798-test-board-mppt-solar_2025-10-29.svg}
+    \caption{PCB BQ25798 Test Board MPPT Solar}
+    \label{img:pcb-bq25798-test-board-mppt-solar}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{Schematic_BQ25798-test-board-mppt-solar_2025-10-29.png}
+    \caption{Schematics BQ25798 Test Board MPPT Solar}
+    \label{img:schematics-V2.0}
+\end{figure}
+
+% ##### Changelog V1.0 to V2.0 ############################################################################################
+\section{change log}
+\subsection{Mistakes V1.0}
+\begin{enumerate}
+    \item no Marking on PCB of min max Voltages.
+    \item CE Pin not having a resistor to pull LOW to enable chip.
+    \item too small footprints for soldering. 
+\end{enumerate}
+
+\subsection{V2.0 changes}
+\begin{enumerate}
+    \item Added support for Dual Power Input
+    \item Added Backup Mode Support
+    \item changed charging current to \(\approx\) 1A
+    \item changed Voltage divider for NTC temperature
+    \item changed PCB layout to accommodate new 2 inputs and outputs
+    \item added better description to PCB
+\end{enumerate}
+
+% ##### References ########################################################################################################
+\newpage
+\nocite{*}
+\bibliographystyle{IEEEtran}
+\bibliography{references}
 \end{document}
