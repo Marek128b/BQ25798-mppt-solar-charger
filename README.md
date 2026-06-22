@@ -2,7 +2,7 @@
 
 ![Version](https://img.shields.io/github/v/release/Marek128b/BQ25798-mppt-solar-charger?label=Version&style=for-the-badge)
 ![Stars](https://img.shields.io/github/stars/Marek128b/BQ25798-mppt-solar-charger?label=⭐%20Stars&style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Testing-orange?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Done-green?style=for-the-badge)
 
 BQ25798 I2C Controlled, 1- to 4-Cell, 5-A Buck-Boost Battery Charger with MPPT for Solar Panels.
 
